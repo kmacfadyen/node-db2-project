@@ -1,8 +1,9 @@
 const Car = require('./cars-model')
+const vin = require('vin-validator')
 
 const checkCarId = async (req, res, next) => {
   try {
-    const car = await Car.getByID()
+    const car = await Car.getById(req.params.id)
     if (!car) {
       next({ status: 404, message: 'not found' })
     }
@@ -37,11 +38,34 @@ const checkCarPayload = (req, res, next) => {
 }
 
 const checkVinNumberValid = (req, res, next) => {
-  
+
+  if (vin.validate(req.body.vin)) {
+    next()
+  }
+  else {
+    next({ 
+      status: 400,
+      message: `vin ${req.body.vin} is invalid`,
+    })
+  }
 }
 
-const checkVinNumberUnique = (req, res, next) => {
-  
+const checkVinNumberUnique = async (req, res, next) => {
+  try {
+    const existing = await Car.getByVin(req.body.vin)
+    if (!existing) {
+      next()
+    }
+    else {
+      next({
+        status: 400,
+        message: `vin ${req.body.vin} already exists`,
+      })
+    }
+  }
+  catch (err) {
+    next(err)
+  }
 }
 
 module.exports = {
